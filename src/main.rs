@@ -31,6 +31,49 @@ impl ops::Add for FieldElement {
     }
 }
 
+//Overloading the operator -
+impl ops::Sub for FieldElement {
+    type Output = FieldElement;
+    fn sub(self, other: FieldElement) -> FieldElement {
+        if self.prime != other.prime {
+            panic!("Cannot substract two numbers in different Fields");
+        }
+        FieldElement {
+            num: ((self.num - other.num)% self.prime + self.prime) % self.prime,
+            prime: self.prime
+        }
+    }
+}
+
+//Overloading the operator *
+impl ops::Mul for FieldElement {
+    type Output = FieldElement;
+    fn mul(self, other: FieldElement) -> FieldElement {
+        if self.prime != other.prime {
+            panic!("Cannot multiply two numbers in different Fields");
+        }
+        FieldElement {
+            num: (self.num * other.num) % self.prime,
+            prime: self.prime
+        }
+    }
+}
+
+//Overload the division operator
+impl ops::Div for FieldElement {
+    type Output = FieldElement;
+    fn div(self, other: FieldElement) -> FieldElement {
+        if self.prime != other.prime {
+            panic!("Cannot divide two numbers in different Fields");
+        }
+        let num = self.num * other.num.pow(self.prime as u32 - 2) % self.prime;
+        FieldElement {
+            num: num,
+            prime: self.prime
+        }
+    }
+}
+
 //Overloading the operator ==
 impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> bool {
@@ -45,17 +88,39 @@ impl std::fmt::Display for FieldElement {
     }
 }
 
+//Creating the power function
+impl FieldElement {
+    fn pow(&self, exponent: i32) -> FieldElement {
+        let num = self.num.pow(exponent as u32) % self.prime;
+        FieldElement {
+            num: num,
+            prime: self.prime
+        }
+    }
+}
+
 fn main() {
-    let p1 = FieldElement { num: 1, prime: 3 };
+    let p1 = FieldElement { num: 2, prime: 7 };
     let p2 = FieldElement { num: 2, prime: 7 };
-    let p3 = FieldElement { num: 8, prime: 7 };
+    let p3 = FieldElement { num: 15, prime: 7 };
     
-    let p4 = p2 + p3;
-    println!("p4.num = {}, p4.prime = {}", p4.num, p4.prime);
+    //let p4 = p2 + p3;
+   // println!("p4.num = {}, p4.prime = {}", p4.num, p4.prime);
 
     // create an instance of FieldElement with num=1 and prime=0
-    let p0 = FieldElement::new(1, 3);
-    println!("check if p4==p0 returns {}, p4 {}, p0 {}", p4 == p0, p4, p0);  
+    let p0 = FieldElement::new(6, 7);
+    println!("p2 - p3 = {} ",p2 - p3);
+    println!("p0 * p1 = {} ",p1 * p0);
+    
+    let p5 = FieldElement::new(5, 7);
+    println!("p5 * * 3 = {} ",p5.pow(3));
+    
+
+    let p6 = FieldElement::new(2, 19);
+    let p7 = FieldElement::new(7, 19);
+  //  println!("p6 / p7 = {} ",p6/p7);
+
+    //println!("check if p4==p0 returns {}, p4 {}, p0 {}", p4 == p0, p4, p0);  
     
     //let p5 = p1 + p4;
     //println!("p1.num = {}, p2.num = {}", p1.num, p2.num);
