@@ -1,12 +1,12 @@
 use std::ops; // to overload the operators
 
 struct FieldElement {
-    num: i32,
-    prime: i32,
+    num: i64,
+    prime: i64,
 }
 // A constructor for FieldElement
 impl FieldElement{
-    fn new(num: i32, prime: i32) -> FieldElement {
+    fn new(num: i64, prime: i64) -> FieldElement {
         if num >= prime || num < 0 {
             panic!("Num {} not in field range 0 to {}", num, prime-1);
         }
@@ -88,12 +88,13 @@ impl std::fmt::Display for FieldElement {
     }
 }
 
-//Creating the power function
+//Function that calculates the power of a FieldElement 
 impl FieldElement {
-    fn pow(&self, exponent: i32) -> FieldElement {
-        let num = self.num.pow(exponent as u32) % self.prime;
+    fn pow(&self, exponent: i64) -> FieldElement {
+        let field_exponent = (exponent % (self.prime - 1) + self.prime) % self.prime;
+        let result = self.num.pow(field_exponent as u32) % self.prime;
         FieldElement {
-            num: num,
+            num: result,
             prime: self.prime
         }
     }
@@ -113,12 +114,12 @@ fn main() {
     println!("p0 * p1 = {} ",p1 * p0);
     
     let p5 = FieldElement::new(5, 7);
-    println!("p5 * * 3 = {} ",p5.pow(3));
+    println!("p5 * * 3 = {} ",p5.pow(-3));
     
 
-    let p6 = FieldElement::new(2, 19);
-    let p7 = FieldElement::new(7, 19);
-  //  println!("p6 / p7 = {} ",p6/p7);
+    let p6 = FieldElement::new(7, 19);
+    let p7 = FieldElement::new(5, 19);
+    println!("p6 / p7 = {} ",p6/p7);
 
     //println!("check if p4==p0 returns {}, p4 {}, p0 {}", p4 == p0, p4, p0);  
     
