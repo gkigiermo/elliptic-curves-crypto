@@ -1,5 +1,5 @@
 use std::ops; // to overload the operators
-
+#[derive(Debug)]
 pub struct FieldElement {
     num: i64,
     prime: i64,
@@ -36,7 +36,7 @@ impl ops::Sub for FieldElement {
     type Output = FieldElement;
     fn sub(self, other: FieldElement) -> FieldElement {
         if self.prime != other.prime {
-            panic!("Cannot substract two numbers in different Fields");
+            panic!("Cannot subtract two numbers in different Fields");
         }
         FieldElement {
             num: ((self.num - other.num)% self.prime + self.prime) % self.prime,
@@ -99,3 +99,52 @@ impl FieldElement {
         }
     }
 }
+
+#[cfg(test)]
+mod tests{
+    use crate::FieldElement;
+    #[test]
+    fn addition(){
+        let field_element1 = FieldElement::new(2,7);
+        let field_element2 = FieldElement::new(5,7);
+        let sum_of_elements = field_element1 + field_element2;
+        let expected_result = FieldElement::new(0,7);
+        assert_eq!( sum_of_elements, expected_result);
+    }
+
+    #[test]
+    fn subtraction(){
+        let field_element1 = FieldElement::new(2,7);
+        let field_element2 = FieldElement::new(5,7);
+        let sum_of_elements = field_element1 - field_element2;
+        let expected_result = FieldElement::new(4,7);
+        assert_eq!( sum_of_elements, expected_result);
+    }
+
+    #[test]
+    fn multiply(){
+        let field_element1 = FieldElement::new(2,7);
+        let field_element2 = FieldElement::new(5,7);
+        let sum_of_elements = field_element1 * field_element2;
+        let expected_result = FieldElement::new(3,7);
+        assert_eq!( sum_of_elements, expected_result);
+    }
+
+    #[test]
+    fn divide(){
+        let field_element1 = FieldElement::new(2,7);
+        let field_element2 = FieldElement::new(5,7);
+        let sum_of_elements = field_element1 / field_element2;
+        let expected_result = FieldElement::new(6,7);
+        assert_eq!( sum_of_elements, expected_result);
+    }
+
+    #[test]
+    fn pow(){
+        let field_element1 = FieldElement::new(2,7);
+        let sum_of_elements = field_element1.pow(4);
+        let expected_result = FieldElement::new(2,7);
+        assert_eq!( sum_of_elements, expected_result);
+    }
+}
+
