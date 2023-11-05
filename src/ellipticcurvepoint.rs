@@ -3,7 +3,7 @@ use std::ops; // to overload the operators
 //Elliptic curves have the form y^2 = x^3 + ax + b
 //first draft considers only integer64 numbers
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct EllipticCurvePoint {
     a: i64,
     b: i64,
