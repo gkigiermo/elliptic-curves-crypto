@@ -1,12 +1,36 @@
+
 use std::ops; // to overload the operators
-#[derive(Debug)]
-pub struct FieldElement {
-    num: i64,
-    prime: i64,
+use core::ops::Rem;
+use core::ops::Mul;
+use core::ops::Add;
+use core::ops::Sub;
+
+//Add the Pow trait temporarily
+pub trait Pow {
+    fn pow(self, rhs: Self) -> Self;
+}
+
+impl Pow for i32 {
+    fn pow(self, rhs: Self) -> Self {
+        i32::pow(self, rhs as u32)
+    }
+}
+
+//This function might overflow needs more treatment
+impl Pow for f32 {
+    fn pow(self, rhs: Self) -> Self {
+        f32::powf(self, rhs)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct FieldElement<T> {
+    num: T,
+    prime: T,
 }
 // A constructor for FieldElement
-impl FieldElement{
-    pub fn new(num: i64, prime: i64) -> FieldElement {
+impl<T: std::fmt::Display + std::ops::Sub<i32> + std::cmp::PartialOrd<T> + std::cmp::PartialOrd<i32> > FieldElement<T> {
+    pub fn new(num: T, prime: T) -> FieldElement<T> where <T as Sub<i32>>::Output: std::fmt::Display {
         if num >= prime || num < 0 {
             panic!("Num {} not in field range 0 to {}", num, prime-1);
         }
@@ -18,9 +42,9 @@ impl FieldElement{
 }
 
 //Overloading the operator +
-impl ops::Add for FieldElement {
-    type Output = FieldElement;
-    fn add(self, other: FieldElement) -> FieldElement {
+impl<T: Copy + std::cmp::PartialEq  + Add<Output = T> + Rem<Output = T>  > ops::Add for FieldElement<T>   {
+    type Output = FieldElement<T>;
+    fn add(self, other: FieldElement<T>) -> FieldElement<T> where <T as Add>::Output: Rem<T> {
         if self.prime != other.prime {
             panic!("Cannot add two numbers in different Fields");
         }
@@ -32,23 +56,23 @@ impl ops::Add for FieldElement {
 }
 
 //Overloading the operator -
-impl ops::Sub for FieldElement {
-    type Output = FieldElement;
-    fn sub(self, other: FieldElement) -> FieldElement {
+impl<T: Copy + std::cmp::PartialEq + Sub<Output = T> + Rem<Output = T> + Add<Output = T>  > ops::Sub for FieldElement<T>  {
+    type Output = FieldElement<T>;
+    fn sub(self, other: FieldElement<T>) -> FieldElement<T> where <T as Add>::Output: Rem<T> {
         if self.prime != other.prime {
             panic!("Cannot subtract two numbers in different Fields");
         }
         FieldElement {
-            num: ((self.num - other.num)% self.prime + self.prime) % self.prime,
+            num: ((self.num - other.num)% self.prime + self.prime) % self.prime,         
             prime: self.prime
         }
     }
 }
 
 //Overloading the operator *
-impl ops::Mul for FieldElement {
-    type Output = FieldElement;
-    fn mul(self, other: FieldElement) -> FieldElement {
+impl<T: Copy + std::cmp::PartialEq + Mul<Output = T> + Rem<Output = T>> ops::Mul for FieldElement<T>  {
+    type Output = FieldElement<T>;
+    fn mul(self, other: FieldElement<T>) -> FieldElement<T> where <T as Mul>::Output: Rem<T>  {
         if self.prime != other.prime {
             panic!("Cannot multiply two numbers in different Fields");
         }
@@ -60,13 +84,14 @@ impl ops::Mul for FieldElement {
 }
 
 //Overload the division operator
-impl ops::Div for FieldElement {
-    type Output = FieldElement;
-    fn div(self, other: FieldElement) -> FieldElement {
+impl<T: Copy + Pow + std::cmp::PartialEq + Mul<Output = T> + Rem<Output = T>  + std::ops::Sub<i32, Output = T> > ops::Div for FieldElement<T> {
+    type Output = FieldElement<T>;
+    fn div(self, other: FieldElement<T>) -> FieldElement<T> {
         if self.prime != other.prime {
             panic!("Cannot divide two numbers in different Fields");
         }
-        let num = self.num * other.num.pow(self.prime as u32 - 2) % self.prime;
+        //This pow call might overflow
+        let num = self.num * other.num.pow(self.prime - 2) % self.prime;
         FieldElement {
             num: num,
             prime: self.prime
@@ -75,24 +100,24 @@ impl ops::Div for FieldElement {
 }
 
 //Overloading the operator ==
-impl PartialEq for FieldElement {
-    fn eq(&self, other: &FieldElement) -> bool {
+impl<T: std::cmp::PartialEq> PartialEq for FieldElement<T> {
+    fn eq(&self, other: &FieldElement<T>) -> bool {
         self.num == other.num && self.prime == other.prime
     }
 }
 
 //Overloading the operator the print the FieldElement
-impl std::fmt::Display for FieldElement {
+impl<T: std::fmt::Display> std::fmt::Display for FieldElement<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "FieldElement_{}({})", self.prime, self.num)
     }
 }
 
 //Function that calculates the power of a FieldElement 
-impl FieldElement {
-    pub fn pow(&self, exponent: i64) -> FieldElement {
-        let field_exponent = (exponent % (self.prime - 1) + self.prime) % self.prime;
-        let result = self.num.pow(field_exponent as u32) % self.prime;
+impl<T: Copy + Add<Output = T> + Rem<Output = T> + Sub<i32, Output = T> + Pow> FieldElement<T> {
+    pub fn pow(&self, exponent: T) -> FieldElement<T> {
+        let field_exponent = (exponent % (self.prime - 1) + self.prime) % self.prime;  
+        let result = self.num.pow(field_exponent) % self.prime;
         FieldElement {
             num: result,
             prime: self.prime
@@ -102,7 +127,7 @@ impl FieldElement {
 
 #[cfg(test)]
 mod tests{
-    use crate::FieldElement;
+    use crate::FieldElement; 
     #[test]
     fn addition(){
         let field_element1 = FieldElement::new(2,7);
@@ -145,6 +170,6 @@ mod tests{
         let sum_of_elements = field_element1.pow(4);
         let expected_result = FieldElement::new(2,7);
         assert_eq!( sum_of_elements, expected_result);
-    }
+    } 
 }
 
