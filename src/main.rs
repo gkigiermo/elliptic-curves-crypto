@@ -17,7 +17,6 @@ fn main() {
     println!("p2 = {}, p3 = {}", p2 , p3);
     println!("p2 - p3  = {} \n", p2 - p3);
     
-    
     let p5 = FieldElement::new(5, 7);
     println!("p5 = {}", p3);
     println!("p5 * * 3 = {} \n", p5.pow(-3));
@@ -25,7 +24,7 @@ fn main() {
     let p6 = FieldElement::new(7, 19);
     let p7 = FieldElement::new(5, 19);
     println!("p6 = {}, p7 = {}", p6 , p7);
-    //println!("p6 / p7  = {} \n", p6 / p7);
+    println!("p6 / p7  = {} \n", p6 / p7);
 
     let p1 = EllipticCurvePoint::new(-1, -1, 5, 7);
     let p2 = EllipticCurvePoint::new(-1, -1, 5, 7);
