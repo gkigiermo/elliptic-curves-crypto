@@ -16,6 +16,28 @@ impl Pow for i32 {
     }
 }
 
+impl Pow for i64 {
+    fn pow(self, rhs: Self) -> Self {
+        i64::pow(self, rhs as u32)
+    }
+}
+
+pub trait DivInFiniteField {
+    fn div_in_finite_field(self, rhs: Self, prime: Self) -> Self;
+}
+
+impl DivInFiniteField for i32 {
+    fn div_in_finite_field(self, rhs: Self, prime: Self) -> Self {      
+        (self as i64 * i64::pow(rhs as i64, (prime - 2) as u32) % prime as i64 ) as i32
+    }
+}
+
+impl DivInFiniteField for i64 {
+    fn div_in_finite_field(self, rhs: Self, prime: Self) -> Self {      
+        (self as i128 * i128::pow(rhs as i128, (prime - 2) as u32) % prime as i128 ) as i64
+    }
+}
+
 //This function might overflow needs more treatment
 impl Pow for f32 {
     fn pow(self, rhs: Self) -> Self {
@@ -84,14 +106,13 @@ impl<T: Copy + std::cmp::PartialEq + Mul<Output = T> + Rem<Output = T>> ops::Mul
 }
 
 //Overload the division operator
-impl<T: Copy + Pow + std::cmp::PartialEq + Mul<Output = T> + Rem<Output = T>  + std::ops::Sub<i32, Output = T> > ops::Div for FieldElement<T> {
+impl<T: Copy + Pow + std::cmp::PartialEq + Mul<Output = T> + Rem<Output = T>  + std::ops::Sub<i32, Output = T> + DivInFiniteField > ops::Div for FieldElement<T> {
     type Output = FieldElement<T>;
     fn div(self, other: FieldElement<T>) -> FieldElement<T> {
         if self.prime != other.prime {
             panic!("Cannot divide two numbers in different Fields");
         }
-        //This pow call might overflow
-        let num = self.num * other.num.pow(self.prime - 2) % self.prime;
+        let num = self.num.div_in_finite_field(other.num, self.prime);
         FieldElement {
             num: num,
             prime: self.prime
