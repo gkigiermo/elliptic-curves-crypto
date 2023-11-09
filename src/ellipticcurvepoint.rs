@@ -1,19 +1,20 @@
 use std::ops; // to overload the operators
-
+use core::ops::Mul;
+use core::ops::Add;
+use core::ops::Sub;
+use core::ops::Div;
 //Elliptic curves have the form y^2 = x^3 + ax + b
-//first draft considers only integer64 numbers
-
 #[derive(Debug, Clone, Copy)]
-pub struct EllipticCurvePoint {
-    a: i64,
-    b: i64,
-    x: i64,
-    y: i64
+pub struct EllipticCurvePoint<T> {
+    a: T,
+    b: T,
+    x: T,
+    y: T
 }
 
 // A constructor for the EllipticCurvePoint
-impl EllipticCurvePoint{
-    pub fn new(x: i64, y: i64, a: i64, b: i64) -> EllipticCurvePoint {
+impl<T: Copy + std::fmt::Display  + Add<Output = T> + Mul<Output = T>  + std::cmp::PartialEq<i32>  + std::cmp::PartialEq<T> > EllipticCurvePoint<T>{
+    pub fn new(x: T, y: T, a: T, b: T) -> EllipticCurvePoint<T> {
         if y*y != x*x*x + a*x + b && !(x == 0 && y == 0) { //check if the point is in the curve, point 0,0 is considered infinity
             panic!("Point ({},{}) is not in the curve y^2 = x^3 + {}x + {}", x, y, a, b);
         }
@@ -26,18 +27,29 @@ impl EllipticCurvePoint{
     }
 }
 
+impl<T: std::convert::From<i32>> EllipticCurvePoint<T>{
+    pub fn new_infinity(a: T, b: T) -> EllipticCurvePoint<T> {
+        EllipticCurvePoint {
+            x: T::from(0),
+            y: T::from(0),
+            a: a,
+            b: b
+        }
+    }
+}
+
 //Overloading the operator ==
-impl PartialEq for EllipticCurvePoint {
-    fn eq(&self, other: &EllipticCurvePoint) -> bool {
+impl<T: std::cmp::PartialEq> PartialEq for EllipticCurvePoint<T> {
+    fn eq(&self, other: &EllipticCurvePoint<T>) -> bool {
         self.x == other.x && self.y == other.y && self.a == other.a && self.b == other.b
     }
-    fn ne(&self, other: &EllipticCurvePoint) -> bool {
+    fn ne(&self, other: &EllipticCurvePoint<T>) -> bool {
         self.x != other.x || self.y != other.y || self.a != other.a || self.b != other.b
     }
 }
 
 //Overloading the operator the print the EllipticCurvePoint
-impl std::fmt::Display for EllipticCurvePoint {
+impl<T: std::fmt::Display + std::cmp::PartialEq<i32>> std::fmt::Display for EllipticCurvePoint<T> {
     fn fmt(&self, c: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.x == 0 && self.y == 0 {
             return write!(c, "Point at infinity in the elliptic curve y^2 = x^3 + {}x + {} ", self.a, self.b);
@@ -47,9 +59,9 @@ impl std::fmt::Display for EllipticCurvePoint {
 }
 
 //Overloading the operator + with point addition
-impl ops::Add for EllipticCurvePoint {
-    type Output = EllipticCurvePoint;
-    fn add(self, other: EllipticCurvePoint) -> EllipticCurvePoint {
+impl<T: Copy + Mul<i32, Output = T> + std::fmt::Display +  std::cmp::PartialEq + std::cmp::PartialEq<i32> + Add<Output = T> + Mul<i32> + Mul<Output = T> +  Sub<Output = T> + Div<Output = T> + std::convert::From<i32> + std::cmp::PartialEq<<i32 as std::ops::Mul<T>>::Output>    > ops::Add for EllipticCurvePoint<T> where i32: Mul<T> {
+    type Output = EllipticCurvePoint<T>;
+    fn add(self, other: EllipticCurvePoint<T>) -> EllipticCurvePoint<T>  {
         if self.a != other.a || self.b != other.b {
             panic!("Points {}, {} are not in the same elliptic curve", self, other);
         }
@@ -60,24 +72,24 @@ impl ops::Add for EllipticCurvePoint {
             return self;
         }
         if self.x == other.x && self.y != other.y {
-            return EllipticCurvePoint::new(0, 0, self.a, self.b);
+            return EllipticCurvePoint::new_infinity(self.a, self.b);
         }
         if self.x != other.x {
             let s = (other.y - self.y) / (other.x - self.x);
             let x = s*s - self.x - other.x;
             let y = s*(self.x - x) - self.y;
-            return EllipticCurvePoint::new(x, y, self.a, self.b);
+            return EllipticCurvePoint::<T>::new(x, y, self.a, self.b);
+        }  
+        if self == other && self.y == 0 as i32 * self.x {
+            return EllipticCurvePoint::new_infinity(self.a, self.b);
         }
-        if self == other && self.y == 0 * self.x {
-            return EllipticCurvePoint::new(0, 0, self.a, self.b);
-        }
-        if self == other {
-            let s = (3*self.x*self.x + self.a) / (2*self.y);
-            let x = s*s - 2*self.x;
+        if self == other { // I should improve i32 * T multiplication
+            let s = ((self.x * self.x) + (self.x * self.x) + (self.x * self.x) + self.a) / (self.y + self.y);
+            let x = s*s -self.x - self.x;
             let y = s*(self.x - x) - self.y;
-            return EllipticCurvePoint::new(x, y, self.a, self.b);
+            return EllipticCurvePoint::<T>::new(x, y, self.a, self.b);
         }
-        return EllipticCurvePoint::new(0, 0, self.a, self.b);
+        return EllipticCurvePoint::new_infinity(self.a, self.b);
     }
 }
 
@@ -116,6 +128,7 @@ mod tests{
         let expected_result = EllipticCurvePoint::new(2, -5, 5, 7);
         assert_eq!( sum_of_points, expected_result);
     }
+     
     #[test]
     fn addition5(){
         let point1 = EllipticCurvePoint::new(-1, -1, 5, 7);
