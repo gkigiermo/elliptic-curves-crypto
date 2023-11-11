@@ -3,6 +3,23 @@ use core::ops::Mul;
 use core::ops::Add;
 use core::ops::Sub;
 use core::ops::Div;
+
+pub trait EllipticCurvePointTrait:
+    Copy
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + std::fmt::Display
+    + std::cmp::PartialOrd<Self>
+    + Sub<i32, Output = Self>
+    + std::cmp::PartialOrd<i32>
+    + std::cmp::PartialEq<i32>
+    + std::convert::From<i32>
+{}
+
+impl EllipticCurvePointTrait for i32 {}
+
 //Elliptic curves have the form y^2 = x^3 + ax + b
 #[derive(Debug, Clone, Copy)]
 pub struct EllipticCurvePoint<T> {
@@ -13,7 +30,7 @@ pub struct EllipticCurvePoint<T> {
 }
 
 // A constructor for the EllipticCurvePoint
-impl<T: Copy + std::fmt::Display  + Add<Output = T> + Mul<Output = T>  + std::cmp::PartialEq<i32>  + std::cmp::PartialEq<T> > EllipticCurvePoint<T>{
+impl<T: EllipticCurvePointTrait > EllipticCurvePoint<T>{
     pub fn new(x: T, y: T, a: T, b: T) -> EllipticCurvePoint<T> {
         if y*y != x*x*x + a*x + b && !(x == 0 && y == 0) { //check if the point is in the curve, point 0,0 is considered infinity
             panic!("Point ({},{}) is not in the curve y^2 = x^3 + {}x + {}", x, y, a, b);
@@ -27,7 +44,7 @@ impl<T: Copy + std::fmt::Display  + Add<Output = T> + Mul<Output = T>  + std::cm
     }
 }
 
-impl<T: std::convert::From<i32>> EllipticCurvePoint<T>{
+impl<T: EllipticCurvePointTrait> EllipticCurvePoint<T>{
     pub fn new_infinity(a: T, b: T) -> EllipticCurvePoint<T> {
         EllipticCurvePoint {
             x: T::from(0),
@@ -37,10 +54,10 @@ impl<T: std::convert::From<i32>> EllipticCurvePoint<T>{
         }
     }
 }
-
+ 
 //Overloading the operator ==
-impl<T: std::cmp::PartialEq> PartialEq for EllipticCurvePoint<T> {
-    fn eq(&self, other: &EllipticCurvePoint<T>) -> bool {
+impl<T:EllipticCurvePointTrait> PartialEq for EllipticCurvePoint<T> {
+        fn eq(&self, other: &EllipticCurvePoint<T>) -> bool {
         self.x == other.x && self.y == other.y && self.a == other.a && self.b == other.b
     }
     fn ne(&self, other: &EllipticCurvePoint<T>) -> bool {
@@ -49,7 +66,7 @@ impl<T: std::cmp::PartialEq> PartialEq for EllipticCurvePoint<T> {
 }
 
 //Overloading the operator the print the EllipticCurvePoint
-impl<T: std::fmt::Display + std::cmp::PartialEq<i32>> std::fmt::Display for EllipticCurvePoint<T> {
+impl<T: EllipticCurvePointTrait> std::fmt::Display for EllipticCurvePoint<T> {
     fn fmt(&self, c: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.x == 0 && self.y == 0 {
             return write!(c, "Point at infinity in the elliptic curve y^2 = x^3 + {}x + {} ", self.a, self.b);
@@ -57,9 +74,9 @@ impl<T: std::fmt::Display + std::cmp::PartialEq<i32>> std::fmt::Display for Elli
         write!(c, "Point ({},{}) in the elliptic curve y^2 = x^3 + {}x + {}", self.x, self.y, self.a, self.b)
     }
 }
-
+ 
 //Overloading the operator + with point addition
-impl<T: Copy + Mul<i32, Output = T> + std::fmt::Display +  std::cmp::PartialEq + std::cmp::PartialEq<i32> + Add<Output = T> + Mul<i32> + Mul<Output = T> +  Sub<Output = T> + Div<Output = T> + std::convert::From<i32> + std::cmp::PartialEq<<i32 as std::ops::Mul<T>>::Output>    > ops::Add for EllipticCurvePoint<T> where i32: Mul<T> {
+impl<T: EllipticCurvePointTrait + std::cmp::PartialEq<<i32 as std::ops::Mul<T>>::Output>   > ops::Add for EllipticCurvePoint<T> where i32: Mul<T>  {
     type Output = EllipticCurvePoint<T>;
     fn add(self, other: EllipticCurvePoint<T>) -> EllipticCurvePoint<T>  {
         if self.a != other.a || self.b != other.b {
@@ -92,7 +109,7 @@ impl<T: Copy + Mul<i32, Output = T> + std::fmt::Display +  std::cmp::PartialEq +
         return EllipticCurvePoint::new_infinity(self.a, self.b);
     }
 }
-
+ 
 #[cfg(test)]
 mod tests{
     use crate::EllipticCurvePoint;
